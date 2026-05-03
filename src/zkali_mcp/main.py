@@ -6,7 +6,7 @@ import asyncio
 import os
 from pathlib import Path
 
-from runner import run_self_test, run_server
+from server import run_self_test, run_server
 
 DEFAULT_DB = Path(__file__).resolve().parent / "db" / "zkali.db"
 
