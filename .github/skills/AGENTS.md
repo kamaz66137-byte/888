@@ -45,9 +45,9 @@
 
 ## 快速定位（常用技能）
 
+- `.github/skills/code-map/`：代码地图构建（项目结构图、模块关系图、影响分析）
+- `.github/skills/deepseek-api/`：DeepSeek API 端到端（Chat/Reasoner/工具调用/Skill 构建）
+- `.github/skills/headless-cli/`：DeepSeek CLI 无头模式（PowerShell 批量调用、YOLO 模式）
 - `.github/skills/tmux-autopilot/`：tmux 自动化操控与多 Agent 协作
-- `.github/skills/canvas-dev/`：Canvas 白板驱动开发
-- `.github/skills/sop-generator/`：SOP 生成与规范化
-- `.github/skills/markdown-to-epub/`：Markdown → EPUB 稳定构建
+- `.github/skills/zkali-mcp/`：Python MCP Server 端到端（sqlite3 持久化、工具契约）
 - `.github/skills/skills-skills/`：元技能（技能生成/校验/脚手架）
-- `.github/skills/claude-official-skills/`：Claude 官方 skills 仓库（Anthropic）的软链接入口
