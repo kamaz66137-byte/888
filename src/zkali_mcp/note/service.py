@@ -64,12 +64,26 @@ def list_notes(db_path: Path, limit: int = 20, offset: int = 0) -> str:
 
 
 def search_notes(db_path: Path, query: str, limit: int = 20, offset: int = 0) -> str:
-    like = f"%{query}%"
+    fts_q = '"{}"'.format(query.replace('"', '""'))
     with open_conn(db_path) as conn:
-        rows = conn.execute(
-            "SELECT id, name, created_at FROM notes WHERE name LIKE ? OR body LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?",
-            (like, like, limit, offset),
-        ).fetchall()
+        try:
+            rows = conn.execute(
+                """
+                SELECT n.id, n.name, n.created_at
+                FROM notes_fts
+                JOIN notes n ON notes_fts.rowid = n.id
+                WHERE notes_fts MATCH ?
+                ORDER BY rank
+                LIMIT ? OFFSET ?
+                """,
+                (fts_q, limit, offset),
+            ).fetchall()
+        except Exception:
+            like = f"%{query}%"
+            rows = conn.execute(
+                "SELECT id, name, created_at FROM notes WHERE name LIKE ? OR body LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?",
+                (like, like, limit, offset),
+            ).fetchall()
     if not rows:
         return "(无结果)"
     return "\n".join(f"[{r['id']}] {r['name']} ({r['created_at']})" for r in rows)

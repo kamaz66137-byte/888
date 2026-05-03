@@ -484,6 +484,26 @@ def init_db(db_path: Path) -> None:
             "CREATE INDEX IF NOT EXISTS idx_prompt_project ON prompt_items(project_id)"
         )
 
+        # 补充高频查询列的复合索引
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tasks_status_priority ON tasks(status, priority)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_project_todos_project_status ON project_todos(project_id, status)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_memories_lookup ON memories(project_id, scope, namespace, key)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_event_log_project ON event_log(project_id)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_event_log_type ON event_log(event_type)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_event_log_project_type ON event_log(project_id, event_type)"
+        )
+
         # 统一对外命名：project / project_todos / project_detail
         # 说明：底层仍保留 projects 物理表，避免破坏已有工具和历史数据。
         conn.execute("DROP VIEW IF EXISTS project")
@@ -517,5 +537,132 @@ def init_db(db_path: Path) -> None:
                 created_at,
                 updated_at
             FROM projects
+            """
+        )
+
+        # 架构版本表（用于追踪迁移，避免重复执行昂贵操作）
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS _schema_version (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+            """
+        )
+
+        # FTS5 全文搜索虚拟表（content= 指向源表，不重复存储数据）
+        conn.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts
+            USING fts5(name, body, content=notes, content_rowid=id)
+            """
+        )
+        conn.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS docs_fts
+            USING fts5(name, content, content=docs_knowledge, content_rowid=id)
+            """
+        )
+        conn.execute(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS snippets_fts
+            USING fts5(name, content, tags, content=snippets, content_rowid=id)
+            """
+        )
+
+        # FTS5 同步触发器 — notes
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS notes_fts_ai AFTER INSERT ON notes BEGIN
+                INSERT INTO notes_fts(rowid, name, body) VALUES (new.id, new.name, new.body);
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS notes_fts_au AFTER UPDATE ON notes BEGIN
+                INSERT INTO notes_fts(notes_fts, rowid, name, body) VALUES('delete', old.id, old.name, old.body);
+                INSERT INTO notes_fts(rowid, name, body) VALUES (new.id, new.name, new.body);
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS notes_fts_ad AFTER DELETE ON notes BEGIN
+                INSERT INTO notes_fts(notes_fts, rowid, name, body) VALUES('delete', old.id, old.name, old.body);
+            END
+            """
+        )
+
+        # FTS5 同步触发器 — docs_knowledge
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS docs_fts_ai AFTER INSERT ON docs_knowledge BEGIN
+                INSERT INTO docs_fts(rowid, name, content) VALUES (new.id, new.name, new.content);
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS docs_fts_au AFTER UPDATE ON docs_knowledge BEGIN
+                INSERT INTO docs_fts(docs_fts, rowid, name, content) VALUES('delete', old.id, old.name, old.content);
+                INSERT INTO docs_fts(rowid, name, content) VALUES (new.id, new.name, new.content);
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS docs_fts_ad AFTER DELETE ON docs_knowledge BEGIN
+                INSERT INTO docs_fts(docs_fts, rowid, name, content) VALUES('delete', old.id, old.name, old.content);
+            END
+            """
+        )
+
+        # FTS5 同步触发器 — snippets
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS snippets_fts_ai AFTER INSERT ON snippets BEGIN
+                INSERT INTO snippets_fts(rowid, name, content, tags) VALUES (new.id, new.name, new.content, new.tags);
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS snippets_fts_au AFTER UPDATE ON snippets BEGIN
+                INSERT INTO snippets_fts(snippets_fts, rowid, name, content, tags) VALUES('delete', old.id, old.name, old.content, old.tags);
+                INSERT INTO snippets_fts(rowid, name, content, tags) VALUES (new.id, new.name, new.content, new.tags);
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER IF NOT EXISTS snippets_fts_ad AFTER DELETE ON snippets BEGIN
+                INSERT INTO snippets_fts(snippets_fts, rowid, name, content, tags) VALUES('delete', old.id, old.name, old.content, old.tags);
+            END
+            """
+        )
+
+        # 首次建表后重建 FTS 索引（覆盖已有数据），仅执行一次
+        fts_init = conn.execute(
+            "SELECT value FROM _schema_version WHERE key = 'fts_initialized'"
+        ).fetchone()
+        if fts_init is None:
+            conn.execute("INSERT INTO notes_fts(notes_fts) VALUES('rebuild')")
+            conn.execute("INSERT INTO docs_fts(docs_fts) VALUES('rebuild')")
+            conn.execute("INSERT INTO snippets_fts(snippets_fts) VALUES('rebuild')")
+            conn.execute(
+                "INSERT INTO _schema_version(key, value) VALUES('fts_initialized', '1')"
+            )
+
+        # 清理已过期的记忆（TTL 已到期）；限制单次清理量，避免阻塞启动
+        conn.execute(
+            """
+            DELETE FROM memories
+            WHERE id IN (
+                SELECT id FROM memories
+                WHERE ttl_seconds IS NOT NULL
+                  AND datetime(created_at, '+' || ttl_seconds || ' seconds') < datetime('now')
+                LIMIT 1000
+            )
             """
         )

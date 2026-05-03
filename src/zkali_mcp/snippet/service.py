@@ -87,12 +87,26 @@ def list_snippets(
 
 
 def search_snippets(db_path: Path, query: str, limit: int = 20, offset: int = 0) -> str:
-    like = f"%{query}%"
+    fts_q = '"{}"'.format(query.replace('"', '""'))
     with open_conn(db_path) as conn:
-        rows = conn.execute(
-            "SELECT id, name, language, scope, updated_at FROM snippets WHERE name LIKE ? OR content LIKE ? OR tags LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?",
-            (like, like, like, limit, offset),
-        ).fetchall()
+        try:
+            rows = conn.execute(
+                """
+                SELECT s.id, s.name, s.language, s.scope, s.updated_at
+                FROM snippets_fts
+                JOIN snippets s ON snippets_fts.rowid = s.id
+                WHERE snippets_fts MATCH ?
+                ORDER BY rank
+                LIMIT ? OFFSET ?
+                """,
+                (fts_q, limit, offset),
+            ).fetchall()
+        except Exception:
+            like = f"%{query}%"
+            rows = conn.execute(
+                "SELECT id, name, language, scope, updated_at FROM snippets WHERE name LIKE ? OR content LIKE ? OR tags LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?",
+                (like, like, like, limit, offset),
+            ).fetchall()
     if not rows:
         return "(空)"
     return "\n".join(

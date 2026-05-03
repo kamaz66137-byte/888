@@ -10,6 +10,8 @@ venv/
 env/
 **/.venv*/
 .venv-skill-seekers/
+# Exception: the env service package inside the MCP source tree must be tracked
+!src/zkali_mcp/env/
 
 # Environment files
 .env
