@@ -76,7 +76,7 @@ def search_all(db_path: Path, query: str, modules: list[str] | None = None, limi
                 (like, like, limit),
             ).fetchall()
             if rows:
-                lines = [f"  [{r['id']}] [{r['scope']}] {r['name']} = {r['value'][:60]}" for r in rows]
+                lines = [f"  [{r['id']}] [{r['scope']}] {r['name']} = {(r['value'] or '')[:60]}" for r in rows]
                 sections.append("【dict】\n" + "\n".join(lines))
 
         if "prompt" in target_modules:

@@ -63,7 +63,11 @@ def rename_tag(db_path: Path, old_name: str, new_name: str, module: str = "") ->
                     new_tags = [new_name if t == old_name else t for t in tags]
                     # Deduplicate while preserving order
                     seen: set[str] = set()
-                    deduped = [t for t in new_tags if not (t in seen or seen.add(t))]
+                    deduped: list[str] = []
+                    for t in new_tags:
+                        if t not in seen:
+                            seen.add(t)
+                            deduped.append(t)
                     conn.execute(
                         f"UPDATE {table} SET tags = ? WHERE id = ?",
                         (json.dumps(deduped, ensure_ascii=False), row["id"]),

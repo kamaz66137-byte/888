@@ -548,8 +548,7 @@ async def run_server(
             await app.run(reader, writer, app.create_initialization_options())
         return
 
-    import json as _json
-
+    import json as json_module
     import uvicorn
 
     async def send_text_response(send, status_code: int, text: str) -> None:
@@ -564,7 +563,7 @@ async def run_server(
         await send({"type": "http.response.body", "body": body})
 
     async def send_json_response(send, status_code: int, data: dict) -> None:
-        body = _json.dumps(data, ensure_ascii=False).encode("utf-8")
+        body = json_module.dumps(data, ensure_ascii=False).encode("utf-8")
         await send(
             {
                 "type": "http.response.start",
@@ -578,8 +577,8 @@ async def run_server(
         await send({"type": "http.response.body", "body": body})
 
     async def handle_health(send) -> None:
+        import sqlite3
         try:
-            import sqlite3
             sqlite3.connect(db_path).close()
             db_status = "connected"
         except Exception:

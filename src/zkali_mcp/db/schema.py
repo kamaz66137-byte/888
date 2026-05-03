@@ -654,11 +654,15 @@ def init_db(db_path: Path) -> None:
                 "INSERT INTO _schema_version(key, value) VALUES('fts_initialized', '1')"
             )
 
-        # 清理已过期的记忆（TTL 已到期）
+        # 清理已过期的记忆（TTL 已到期）；限制单次清理量，避免阻塞启动
         conn.execute(
             """
             DELETE FROM memories
-            WHERE ttl_seconds IS NOT NULL
-              AND datetime(created_at, '+' || ttl_seconds || ' seconds') < datetime('now')
+            WHERE id IN (
+                SELECT id FROM memories
+                WHERE ttl_seconds IS NOT NULL
+                  AND datetime(created_at, '+' || ttl_seconds || ' seconds') < datetime('now')
+                LIMIT 1000
+            )
             """
         )

@@ -22,20 +22,25 @@ def normalize_tags(tags: object) -> str:
 
 
 def _scope_filter(
-    scope: str, project_id: str
+    scope: str, project_id: str, alias: str = ""
 ) -> tuple[str, list[object]]:
-    """Build WHERE clause for scope/project filtering (without query)."""
+    """Build WHERE clause for scope/project filtering (without query).
+
+    Args:
+        alias: optional table alias prefix (e.g. "d") to qualify column names.
+    """
+    pfx = f"{alias}." if alias else ""
     where_parts: list[str] = []
     params: list[object] = []
     if scope == "public":
-        where_parts.append("scope = 'public'")
+        where_parts.append(f"{pfx}scope = 'public'")
     elif scope == "project":
         if not project_id:
             raise ValueError("project scope 需要 project_id")
-        where_parts.append("scope = 'project' AND project_id = ?")
+        where_parts.append(f"{pfx}scope = 'project' AND {pfx}project_id = ?")
         params.append(project_id)
     elif project_id:
-        where_parts.append("(scope = 'public' OR (scope = 'project' AND project_id = ?))")
+        where_parts.append(f"({pfx}scope = 'public' OR ({pfx}scope = 'project' AND {pfx}project_id = ?))")
         params.append(project_id)
     where_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
     return where_sql, params
@@ -82,16 +87,11 @@ def list_docs(
     limit: int = 20,
     offset: int = 0,
 ) -> str:
-    try:
-        where_sql, params = _scope_filter(scope, project_id)
-    except ValueError as e:
-        return f"ERR: {e}"
-
     with open_conn(db_path) as conn:
         if query:
             fts_q = '"{}"'.format(query.replace('"', '""'))
             try:
-                # Use FTS5 to find matching ids, then apply scope filter
+                # Use FTS5 to find matching ids, then apply scope filter with alias
                 fts_ids = [
                     row[0]
                     for row in conn.execute(
@@ -101,27 +101,38 @@ def list_docs(
                 ]
                 if not fts_ids:
                     return "(空)"
+                try:
+                    scope_where, scope_params = _scope_filter(scope, project_id, alias="d")
+                except ValueError as e:
+                    return f"ERR: {e}"
                 id_placeholders = ",".join("?" * len(fts_ids))
-                fts_where = f"d.id IN ({id_placeholders})"
-                scope_clause = where_sql.replace("scope", "d.scope").replace("project_id", "d.project_id") if where_sql else ""
-                combined_where = f"WHERE {fts_where}"
-                if scope_clause:
-                    combined_where = f"WHERE {fts_where} AND ({scope_clause[6:]})"
+                id_where = f"d.id IN ({id_placeholders})"
+                if scope_where:
+                    combined_where = f"WHERE {id_where} AND ({scope_where[6:]})"
+                else:
+                    combined_where = f"WHERE {id_where}"
                 rows = conn.execute(
                     f"SELECT d.id, d.scope, d.project_id, d.name, d.updated_at FROM docs_knowledge d {combined_where} ORDER BY d.id DESC LIMIT ? OFFSET ?",
-                    fts_ids + params + [limit, offset],
+                    fts_ids + scope_params + [limit, offset],
                 ).fetchall()
             except Exception:
                 # Fallback to LIKE
+                try:
+                    where_sql, params = _scope_filter(scope, project_id)
+                except ValueError as e:
+                    return f"ERR: {e}"
                 like = f"%{query}%"
-                like_params = list(params) + [like, like, like]
                 query_clause = "(name LIKE ? OR content LIKE ? OR tags LIKE ?)"
                 full_where = f"{where_sql} AND {query_clause}" if where_sql else f"WHERE {query_clause}"
                 rows = conn.execute(
                     f"SELECT id, scope, project_id, name, updated_at FROM docs_knowledge {full_where} ORDER BY id DESC LIMIT ? OFFSET ?",
-                    like_params + [limit, offset],
+                    params + [like, like, like, limit, offset],
                 ).fetchall()
         else:
+            try:
+                where_sql, params = _scope_filter(scope, project_id)
+            except ValueError as e:
+                return f"ERR: {e}"
             rows = conn.execute(
                 f"SELECT id, scope, project_id, name, updated_at FROM docs_knowledge {where_sql} ORDER BY id DESC LIMIT ? OFFSET ?",
                 params + [limit, offset],
