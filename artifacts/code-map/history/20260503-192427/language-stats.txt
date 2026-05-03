@@ -1,0 +1,9 @@
+ini 1
+json 26
+md 31
+NO_EXT 3
+ps1 1
+py 33
+sh 8
+toml 2
+txt 3

@@ -1,0 +1,19 @@
+{
+    "standard_version":  "1.0",
+    "chunking":  {
+                     "unit":  "file",
+                     "scope":  "src",
+                     "text_template":  "path + title + domain + extension"
+                 },
+    "vector":  {
+                   "algorithm":  "hashing-tf",
+                   "dimensions":  256,
+                   "normalization":  "l2",
+                   "metric":  "cosine",
+                   "tokenizer":  "unicode-lower-split-nonalnum"
+               },
+    "retrieval":  {
+                      "top_k_default":  10,
+                      "rerank":  "none"
+                  }
+}

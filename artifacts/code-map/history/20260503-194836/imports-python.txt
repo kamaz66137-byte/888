@@ -1,0 +1,35 @@
+.github\skills\skills-skills\scripts\create-skill.py:2: from __future__ import annotations
+.github\skills\skills-skills\scripts\create-skill.py:4: import argparse
+.github\skills\skills-skills\scripts\create-skill.py:5: import re
+.github\skills\skills-skills\scripts\create-skill.py:6: from pathlib import Path
+.github\skills\skills-skills\scripts\create-skill.py:123: from __future__ import annotations
+.github\skills\skills-skills\scripts\create-skill.py:125: import argparse
+.github\skills\skills-skills\scripts\create-skill.py:126: from pathlib import Path
+.github\skills\skills-skills\scripts\skill-seekers-bootstrap.py:2: from __future__ import annotations
+.github\skills\skills-skills\scripts\skill-seekers-bootstrap.py:4: import argparse
+.github\skills\skills-skills\scripts\skill-seekers-bootstrap.py:5: import shutil
+.github\skills\skills-skills\scripts\skill-seekers-bootstrap.py:6: import subprocess
+.github\skills\skills-skills\scripts\skill-seekers-bootstrap.py:7: from pathlib import Path
+.github\skills\skills-skills\scripts\skill-seekers-import.py:2: from __future__ import annotations
+.github\skills\skills-skills\scripts\skill-seekers-import.py:4: import argparse
+.github\skills\skills-skills\scripts\skill-seekers-import.py:5: import re
+.github\skills\skills-skills\scripts\skill-seekers-import.py:6: import shutil
+.github\skills\skills-skills\scripts\skill-seekers-import.py:7: from pathlib import Path
+.github\skills\skills-skills\scripts\skill-seekers-update.py:2: from __future__ import annotations
+.github\skills\skills-skills\scripts\skill-seekers-update.py:4: import argparse
+.github\skills\skills-skills\scripts\skill-seekers-update.py:5: import shutil
+.github\skills\skills-skills\scripts\skill-seekers-update.py:6: import tarfile
+.github\skills\skills-skills\scripts\skill-seekers-update.py:7: import tempfile
+.github\skills\skills-skills\scripts\skill-seekers-update.py:8: import urllib.request
+.github\skills\skills-skills\scripts\skill-seekers-update.py:9: from pathlib import Path
+.github\skills\skills-skills\scripts\skill-seekers.py:2: from __future__ import annotations
+.github\skills\skills-skills\scripts\skill-seekers.py:4: import argparse
+.github\skills\skills-skills\scripts\skill-seekers.py:5: import os
+.github\skills\skills-skills\scripts\skill-seekers.py:6: import platform
+.github\skills\skills-skills\scripts\skill-seekers.py:7: import shutil
+.github\skills\skills-skills\scripts\skill-seekers.py:8: import subprocess
+.github\skills\skills-skills\scripts\skill-seekers.py:9: from pathlib import Path
+.github\skills\skills-skills\scripts\validate-skill.py:2: from __future__ import annotations
+.github\skills\skills-skills\scripts\validate-skill.py:4: import argparse
+.github\skills\skills-skills\scripts\validate-skill.py:5: import re
+.github\skills\skills-skills\scripts\validate-skill.py:6: from pathlib import Path

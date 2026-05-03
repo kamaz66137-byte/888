@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260503-192009",
+  "scope": ".",
+  "repo_root": "/mnt/c/Users/a1575/Desktop/888",
+  "commands": [
+    "update-codemap.sh .",
+    "structure scan",
+    "imports scan",
+    "change tracking"
+  ],
+  "outputs": [
+    "structure-map.txt",
+    "language-stats.txt",
+    "imports-python.txt",
+    "imports-tsjs.txt",
+    "context-cards.md",
+    "impact-analysis.md",
+    "change-tracking.md",
+    "manifest.json"
+  ]
+}

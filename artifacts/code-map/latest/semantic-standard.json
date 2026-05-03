@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "algorithm": "hashing-tf",
+  "dimensions": 256,
+  "normalization": "l2",
+  "similarity": "cosine",
+  "tokenizer": "whitespace+punct-split,lowercase,min_len=2",
+  "chunk_unit": "file",
+  "generated": "20260503-194836"
+}

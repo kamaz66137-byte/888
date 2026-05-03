@@ -1,0 +1,25 @@
+{
+  "timestamp": "20260503-194836",
+  "scope": ".github/skills/skills-skills/scripts",
+  "skill": "skills-skills",
+  "command": "code-map skill (manual, no src/ - scripts/ scope)",
+  "files_scanned": 12,
+  "artifacts": [
+    "structure-map.txt",
+    "language-stats.txt",
+    "imports-python.txt",
+    "imports-tsjs.txt",
+    "context-cards.md",
+    "impact-analysis.md",
+    "change-tracking.md",
+    "semantic-corpus.jsonl",
+    "semantic-vectors.jsonl",
+    "semantic-standard.json",
+    "manifest.json"
+  ],
+  "language_stats": {
+    ".py": 6,
+    ".sh": 6
+  },
+  "history_path": "artifacts/code-map/history/20260503-194836"
+}

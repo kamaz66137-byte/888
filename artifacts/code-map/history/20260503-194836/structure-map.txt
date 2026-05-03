@@ -1,0 +1,12 @@
+.github\skills\skills-skills\scripts\create-skill.py
+.github\skills\skills-skills\scripts\create-skill.sh
+.github\skills\skills-skills\scripts\skill-seekers-bootstrap.py
+.github\skills\skills-skills\scripts\skill-seekers-bootstrap.sh
+.github\skills\skills-skills\scripts\skill-seekers-import.py
+.github\skills\skills-skills\scripts\skill-seekers-import.sh
+.github\skills\skills-skills\scripts\skill-seekers-update.py
+.github\skills\skills-skills\scripts\skill-seekers-update.sh
+.github\skills\skills-skills\scripts\skill-seekers.py
+.github\skills\skills-skills\scripts\skill-seekers.sh
+.github\skills\skills-skills\scripts\validate-skill.py
+.github\skills\skills-skills\scripts\validate-skill.sh
