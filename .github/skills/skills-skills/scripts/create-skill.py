@@ -150,9 +150,9 @@ def write_scripts_main(target_dir: Path, skill_name: str) -> None:
       target_dir: 技能根目录路径。
       skill_name: 技能名称，用于模块文档字符串。
   """
-  (target_dir / "scripts" / "main.py").write_text(
-    f'''#!/usr/bin/env python3
-"""{skill_name} 技能辅助脚本入口。
+  # 使用普通字符串（非 f-string）避免与生成代码中的 {} 语法混淆，统一用 __SKILL_NAME__ 占位符替换
+  template = '''#!/usr/bin/env python3
+"""__SKILL_NAME__ 技能辅助脚本入口。
 
 将核心辅助逻辑保留在 Python 中以保证跨平台可移植性。
 如需 Shell 包装，请在 .sh / .ps1 中仅做参数转发，不写主逻辑。
@@ -169,7 +169,7 @@ def parse_args() -> argparse.Namespace:
   Returns:
       包含 workspace 字段的命名空间对象。
   """
-  parser = argparse.ArgumentParser(description="{skill_name} 技能辅助脚本")
+  parser = argparse.ArgumentParser(description="__SKILL_NAME__ 技能辅助脚本")
   parser.add_argument("--workspace", default=".", help="工作区根路径（默认为当前目录）")
   return parser.parse_args()
 
@@ -182,13 +182,15 @@ def main() -> int:
   """
   args = parse_args()
   workspace = Path(args.workspace).resolve()
-  print(f"workspace={{workspace}}")
+  print(f"workspace={workspace}")
   return 0
 
 
 if __name__ == "__main__":
   raise SystemExit(main())
-'''.replace("{skill_name}", skill_name),
+'''
+  (target_dir / "scripts" / "main.py").write_text(
+    template.replace("__SKILL_NAME__", skill_name),
     encoding="utf-8",
     newline="\n",
   )

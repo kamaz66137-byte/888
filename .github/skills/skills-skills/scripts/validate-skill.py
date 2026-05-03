@@ -191,8 +191,13 @@ def validate(skill_dir: Path, strict: bool) -> ValidationResult:
   fm = parse_frontmatter(content)
 
   name = fm.get("name", "")
-  # description 值可能带有外层引号（YAML 惯例），需剥除后再检查内容
-  desc = fm.get("description", "").strip('"').strip("'")
+  # 剥除 description 外层成对引号（YAML 惯例），仅当首尾字符为同种引号时才移除
+  desc_raw = fm.get("description", "")
+  if (desc_raw.startswith('"') and desc_raw.endswith('"')) or \
+     (desc_raw.startswith("'") and desc_raw.endswith("'")):
+    desc = desc_raw[1:-1]
+  else:
+    desc = desc_raw
   if not name:
     raise SystemExit("Error: Missing frontmatter field: name")
   if not desc:
@@ -255,7 +260,7 @@ def validate(skill_dir: Path, strict: bool) -> ValidationResult:
         if hit < 2:
           result.error(
             f"示例 {k + 1} 缺少结构化内容"
-            f"（[输入/步骤/预期输出] 至少包含2项，当前仅 {hit} 项）"
+            f" （[输入/步骤/预期输出] 至少包含2项，当前仅 {hit} 项）"
           )
   except StopIteration:
     pass

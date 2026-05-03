@@ -26,7 +26,8 @@ if str(_SCRIPTS_DIR) not in sys.path:
 import importlib.util as _ilu
 
 _spec = _ilu.spec_from_file_location("validate_skill", _SCRIPTS_DIR / "validate-skill.py")
-assert _spec and _spec.loader
+if not (_spec and _spec.loader):
+  raise SystemExit("Error: 无法加载 validate-skill.py 模块，请确认脚本文件存在")
 _vs_mod = _ilu.module_from_spec(_spec)
 _spec.loader.exec_module(_vs_mod)  # type: ignore[union-attr]
 
