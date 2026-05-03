@@ -14,6 +14,46 @@
 - 代码片段（公共片段 + 项目片段）
 - 项目环境变量
 - 事件日志
+- 全局统计与过期清理
+- 全局跨模块搜索
+- 批量操作（笔记、任务）
+- 项目数据导出 / 导入
+- 标签管理（列出、重命名、合并）
+- 数据库备份
+- 热点事件查询（Google News / HN）
+
+## 项目结构
+
+```
+src/zkali_mcp/
+├── main.py              # 入口
+├── runner.py            # 启动辅助
+├── requirements.txt
+├── adapters/            # 适配层（工具路由、Schema 契约）
+│   ├── dispatcher.py    # O(1) 工具路由分发
+│   ├── _contract.py
+│   ├── schemas/         # 各模块 JSON Schema
+│   └── tools/           # 各模块工具实现
+├── domains/             # 业务域服务层
+│   ├── docs/
+│   ├── elog/
+│   ├── envvar/
+│   ├── kv/
+│   ├── memory/
+│   ├── note/
+│   ├── project/
+│   ├── prompt/
+│   ├── snippet/
+│   └── task/
+├── db/                  # 数据库连接与 Schema 初始化
+│   ├── connection.py
+│   └── schema.py
+├── protocol/            # 统一响应格式
+│   └── response.py
+└── server/              # HTTP 服务入口
+    ├── app.py
+    └── selftest.py
+```
 
 ## 启动方式
 
@@ -112,6 +152,18 @@ HTTP 端点说明：
 | `get/log` | `id` | 查看事件日志详情 |
 | `list/log` | `project_id?`, `event_type?`, `limit?`, `offset?` | 列出事件日志 |
 | `clear/log` | `project_id?`, `event_type?` | 清理事件日志（需至少传一个条件） |
+| `stats/all` | 无 | 全库数据量统计（笔记/任务/项目/文档等各模块计数） |
+| `cleanup/expired` | 无 | 清理已过期的记忆条目 |
+| `search/all` | `query`, `modules?`, `limit?` | 跨模块全局搜索（notes/tasks/docs/snippets/dict/prompt） |
+| `bulk/note_add` | `items` | 批量新增笔记，`items` 为 `[{name, body?}]` 数组 |
+| `bulk/task_add` | `items` | 批量新增任务，`items` 为 `[{name, description?, priority?, due_date?}]` 数组 |
+| `export/project` | `project_id` | 导出项目完整数据（含 todos/progress/memory/docs/env/snippets 等）为 JSON |
+| `import/project` | `data` | 导入项目数据（`export/project` 产出的 JSON） |
+| `list/tags` | `module?` | 列出所有标签及引用次数（module 可选：docs/dict/prompt/snippet） |
+| `rename/tag` | `old_name`, `new_name`, `module?` | 重命名标签 |
+| `merge/tags` | `tags`, `target`, `module?` | 将多个标签合并为一个目标标签 |
+| `backup/db` | `dest?` | 备份数据库文件（不传 `dest` 则自动生成时间戳文件名） |
+| `query/hot-events` | `topic`, `date?`, `limit?`, `sources?`, `timezone?` | 查询热点事件（Google News / Hacker News） |
 
 ## 项目字段与查询规则（重点）
 
