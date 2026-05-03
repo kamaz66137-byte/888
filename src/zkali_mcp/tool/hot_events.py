@@ -28,7 +28,7 @@ def _to_target_tz(timestamp: str, tz_name: str) -> str:
     return converted.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _fetch_news_items(topic: str, date_value: str, limit: int) -> list[dict]:
+def _fetch_google_news(topic: str, date_value: str, limit: int) -> list[dict]:
     query = urllib.parse.urlencode(
         {
             "q": f"{topic} {date_value}",
@@ -51,8 +51,39 @@ def _fetch_news_items(topic: str, date_value: str, limit: int) -> list[dict]:
         title = (item.findtext("title") or "").strip()
         link = (item.findtext("link") or "").strip()
         pub_date = (item.findtext("pubDate") or "").strip()
-        items.append({"title": title, "link": link, "pub_date": pub_date})
+        items.append({"title": title, "link": link, "pub_date": pub_date, "source": "Google News"})
     return items
+
+
+def _fetch_hn_news(topic: str, limit: int) -> list[dict]:
+    query = urllib.parse.urlencode({"q": topic, "count": limit})
+    url = f"https://hnrss.org/newest?{query}"
+    with urllib.request.urlopen(url, timeout=12) as resp:
+        raw = resp.read()
+
+    root = ET.fromstring(raw)
+    channel = root.find("channel")
+    if channel is None:
+        return []
+
+    items: list[dict] = []
+    for item in channel.findall("item")[:limit]:
+        title = (item.findtext("title") or "").strip()
+        link = (item.findtext("link") or "").strip()
+        pub_date = (item.findtext("pubDate") or "").strip()
+        items.append({"title": title, "link": link, "pub_date": pub_date, "source": "Hacker News"})
+    return items
+
+
+def _parse_pub_date(pub_date: str, tz_name: str) -> str:
+    if not pub_date:
+        return ""
+    try:
+        dt = parsedate_to_datetime(pub_date)
+        dt_utc = dt.astimezone(timezone.utc).replace(tzinfo=None)
+        return _to_target_tz(dt_utc.isoformat(), tz_name)
+    except Exception:
+        return ""
 
 
 def dispatch_hot_events_tool(name: str, arguments: dict) -> str | None:
@@ -67,7 +98,8 @@ def dispatch_hot_events_tool(name: str, arguments: dict) -> str | None:
     if date_value == "today":
         date_value = datetime.utcnow().strftime("%Y-%m-%d")
 
-    timezone = str(arguments.get("timezone", "Asia/Shanghai")).strip() or "Asia/Shanghai"
+    # Use tz_name to avoid shadowing the imported timezone module
+    tz_name = str(arguments.get("timezone", "Asia/Shanghai")).strip() or "Asia/Shanghai"
     region = str(arguments.get("region", "global")).strip() or "global"
     scope = str(arguments.get("scope", "hot")).strip().lower() or "hot"
     lang = str(arguments.get("lang", "zh-CN")).strip() or "zh-CN"
@@ -76,22 +108,38 @@ def dispatch_hot_events_tool(name: str, arguments: dict) -> str | None:
     limit_raw = int(arguments.get("limit", 10))
     limit = max(1, min(50, limit_raw))
 
-    items: list[dict] = []
-    try:
-        news_items = _fetch_news_items(topic, date_value, limit)
-    except Exception as exc:
-        return f"ERR: SOURCE_UNAVAILABLE {exc}"
+    news_items: list[dict] = []
+    sources_used: list[dict] = []
+    errors: list[str] = []
 
-    for news in news_items:
-        pub_date = news.get("pub_date") or ""
-        start_time = ""
-        if pub_date:
+    # Route to different sources based on region
+    if region in ("hacker-news", "hn"):
+        try:
+            news_items = _fetch_hn_news(topic, limit)
+            sources_used.append({"name": "Hacker News RSS", "url": "https://hnrss.org/", "note": "public hn rss"})
+        except Exception as exc:
+            errors.append(f"HN: {exc}")
+    else:
+        try:
+            news_items = _fetch_google_news(topic, date_value, limit)
+            sources_used.append({"name": "Google News RSS", "url": "https://news.google.com/", "note": "public news rss"})
+        except Exception as exc:
+            errors.append(f"Google News: {exc}")
+        # If Google News fails or region == "multi", try HN as well
+        if region == "multi" or (not news_items and region == "global"):
             try:
-                dt = parsedate_to_datetime(pub_date)
-                dt_utc = dt.astimezone(timezone.utc).replace(tzinfo=None)
-                start_time = _to_target_tz(dt_utc.isoformat(), timezone)
-            except Exception:
-                start_time = ""
+                hn_items = _fetch_hn_news(topic, limit)
+                news_items.extend(hn_items)
+                sources_used.append({"name": "Hacker News RSS", "url": "https://hnrss.org/", "note": "public hn rss"})
+            except Exception as exc:
+                errors.append(f"HN fallback: {exc}")
+
+    if not news_items and errors:
+        return f"ERR: SOURCE_UNAVAILABLE {'; '.join(errors)}"
+
+    items: list[dict] = []
+    for news in news_items:
+        start_time = _parse_pub_date(news.get("pub_date") or "", tz_name)
         items.append(
             {
                 "title": news.get("title", ""),
@@ -101,6 +149,7 @@ def dispatch_hot_events_tool(name: str, arguments: dict) -> str | None:
                 "score": "",
                 "importance": 3,
                 "source_refs": [news.get("link", "")],
+                "source": news.get("source", ""),
             }
         )
 
@@ -110,7 +159,7 @@ def dispatch_hot_events_tool(name: str, arguments: dict) -> str | None:
     result = {
         "request_id": f"hot-{int(datetime.utcnow().timestamp())}",
         "fetched_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S") + "Z",
-        "normalized_timezone": timezone,
+        "normalized_timezone": tz_name,
         "query_summary": {
             "topic": topic,
             "date": date_value,
@@ -120,15 +169,9 @@ def dispatch_hot_events_tool(name: str, arguments: dict) -> str | None:
             "lang": lang,
             "strict_mode": strict_mode,
         },
-        "sources": [
-            {
-                "name": "Google News RSS",
-                "url": "https://news.google.com/",
-                "note": "public news rss",
-            }
-        ],
+        "sources": sources_used,
         "items": items,
         "highlights": [row["title"] for row in items[: min(5, len(items))]],
-        "warnings": [] if items else ["NO_DATA"],
+        "warnings": ([] if items else ["NO_DATA"]) + errors,
     }
     return json.dumps(result, ensure_ascii=False)

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import time
 from pathlib import Path
 from typing import Literal
 
@@ -12,6 +14,16 @@ from mcp.types import TextContent
 
 from db import init_db
 from tool import dispatch_tool, build_tools
+
+logger = logging.getLogger("zkali_mcp")
+
+
+def _configure_logging() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
 
 def run_self_test(db_path: Path) -> int:
@@ -505,7 +517,15 @@ def _build_mcp_server(db_path: Path) -> Server:
 
     @app.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-        result = await asyncio.to_thread(dispatch_tool, name, arguments, db_path)
+        t0 = time.monotonic()
+        try:
+            result = await asyncio.to_thread(dispatch_tool, name, arguments, db_path)
+        except Exception as exc:
+            logger.error("tool %s raised exception: %s", name, exc, exc_info=True)
+            result = f"ERR INTERNAL: {exc}"
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        preview = result[:80].replace("\n", " ") if result else ""
+        logger.info("tool=%s elapsed=%dms result_preview=%r", name, elapsed_ms, preview)
         return [TextContent(type="text", text=result)]
 
     return app
@@ -517,13 +537,18 @@ async def run_server(
     host: str = "127.0.0.1",
     port: int = 8000,
 ) -> None:
+    _configure_logging()
     init_db(db_path)
     app = _build_mcp_server(db_path)
+    tools_count = len(build_tools())
+    logger.info("zkali_mcp started transport=%s host=%s port=%s db=%s tools=%d", transport, host, port, db_path, tools_count)
 
     if transport == "stdio":
         async with stdio_server() as (reader, writer):
             await app.run(reader, writer, app.create_initialization_options())
         return
+
+    import json as _json
 
     import uvicorn
 
@@ -538,13 +563,40 @@ async def run_server(
         )
         await send({"type": "http.response.body", "body": body})
 
+    async def send_json_response(send, status_code: int, data: dict) -> None:
+        body = _json.dumps(data, ensure_ascii=False).encode("utf-8")
+        await send(
+            {
+                "type": "http.response.start",
+                "status": status_code,
+                "headers": [
+                    (b"content-type", b"application/json; charset=utf-8"),
+                    (b"access-control-allow-origin", b"*"),
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
+
+    async def handle_health(send) -> None:
+        try:
+            import sqlite3
+            sqlite3.connect(db_path).close()
+            db_status = "connected"
+        except Exception:
+            db_status = "error"
+        await send_json_response(send, 200, {"status": "ok", "db": db_status, "tools": tools_count})
+
     if transport == "streamable-http":
         http_transport = StreamableHTTPServerTransport(mcp_session_id=None)
 
         async def streamable_http_asgi(scope, receive, send) -> None:
             if scope.get("type") != "http":
                 return
-            if scope.get("path") != "/mcp":
+            path = scope.get("path")
+            if path == "/health":
+                await handle_health(send)
+                return
+            if path != "/mcp":
                 await send_text_response(send, 404, "Not Found")
                 return
             await http_transport.handle_request(scope, receive, send)
@@ -571,6 +623,10 @@ async def run_server(
             return
         path = scope.get("path")
         method = scope.get("method")
+
+        if path == "/health":
+            await handle_health(send)
+            return
 
         if path == "/sse" and method == "GET":
             async with sse_transport.connect_sse(scope, receive, send) as (read_stream, write_stream):
