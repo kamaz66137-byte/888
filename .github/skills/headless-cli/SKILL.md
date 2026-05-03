@@ -9,7 +9,7 @@ description: "DeepSeek CLI 无头模式调用技能：支持通过 Invoke-RestMe
 
 > 运行环境：**Windows 10 / PowerShell 5.1+**
 
-## When to Use This Skill
+## 何时使用本技能
 
 触发条件：
 - 需要批量处理文件（翻译、审查、格式化）
@@ -17,7 +17,7 @@ description: "DeepSeek CLI 无头模式调用技能：支持通过 Invoke-RestMe
 - 需要多模型串联/并联处理
 - 需要无人值守的 AI 任务执行
 
-## Not For / Boundaries
+## 禁止使用 / 边界
 
 不适用于：
 - 需要交互式对话的场景
@@ -30,7 +30,7 @@ description: "DeepSeek CLI 无头模式调用技能：支持通过 Invoke-RestMe
 - 网络代理配置（如需）
 
 
-## Quick Reference
+## 快速参考
 
 ### 🔴 YOLO 模式（通过 Claude Code 接入，全权限）
 
@@ -130,9 +130,9 @@ $resp.choices[0].message.content | Set-Content output.md
 | 推理增强 | `thinking=@{type="enabled"}` + `reasoning_effort="high"` | `$env:CLAUDE_CODE_EFFORT_LEVEL="max"` |
 | 继续对话 | N/A（无状态） | `-c` / `--continue` |
 
-## Examples
+## 示例
 
-### Example 1: 批量处理文档
+### 示例1：批量处理文档
 
 **输入**: 多个 Markdown 文件
 **步骤**:
@@ -152,7 +152,7 @@ Get-ChildItem docs\*.md | ForEach-Object {
 ```
 **预期输出**: 翻译后的英文文件
 
-### Example 2: 代码审查（Claude Code + DeepSeek）
+### 示例2：代码审查（Claude Code + DeepSeek）
 
 **输入**: 源代码文件
 **步骤**:
@@ -163,7 +163,7 @@ Get-ChildItem src\*.py | Get-Content | claude --dangerously-skip-permissions -p 
 ```
 **预期输出**: Markdown 格式的审查报告
 
-### Example 3: 推理模型深度分析
+### 示例3：推理模型深度分析
 
 **输入**: 复杂技术问题
 **步骤**:
@@ -187,13 +187,13 @@ $resp.choices[0].message.content | Set-Content analysis.md
 ```
 **预期输出**: 带推理链的深度分析结果
 
-## References
+## 参考资料
 
 - `references/deepseek-cli.md` - DeepSeek API 调用参数
 - [DeepSeek API 官方文档](https://api-docs.deepseek.com/zh-cn/)
 - [DeepSeek 接入 Claude Code 指南](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code)
 
-## Maintenance
+## 维护说明
 
 - 来源: DeepSeek 官方文档
 - 更新: 2026-05-03

@@ -1,7 +1,7 @@
 ---
 name: 'skill-instructions'
 description: 'skill技能创建者规范'
-applyTo: '.github/skills/skills-skills/**'
+applyTo: '.github/skills/**'
 ---
 # Skill技能创建者规范必须全部遵守以下规范，任何违反规范的提交都将被要求修改直至符合要求：
 - 如若需要使用python虚拟环境,必须按照.vscode/settings.json 中的路径为基准

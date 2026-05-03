@@ -1,4 +1,4 @@
-﻿---
+---
 name: zkali-mcp
 description: "Python MCP Server 端到端能力：命名规范、项目结构、模块化、工具契约（输入/输出/错误处理）、AI 协议（description/x-tags 自动路由）、技术文档标准、迭代方案。以 sqlite3 为唯一持久化后端。适用于为 Claude Code/VS Code Copilot 构建生产可用的本地工具服务。"
 ---
