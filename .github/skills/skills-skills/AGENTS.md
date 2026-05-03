@@ -13,6 +13,8 @@ skills-skills/
 |   `-- template-complete.md
 |-- scripts/
 |   |-- Skill_Seekers-development/
+|   |-- audit-skills.py
+|   |-- audit-skills.sh                 # thin wrapper -> audit-skills.py
 |   |-- create-skill.py
 |   |-- create-skill.sh                 # thin wrapper -> create-skill.py
 |   |-- skill-seekers-bootstrap.py
@@ -41,14 +43,16 @@ skills-skills/
 - `.github/skills/skills-skills/SKILL.md`: 入口文件（触发条件、交付物、工作流、质量门禁、工具链）。
 - `.github/skills/skills-skills/assets/template-minimal.md`: 精简模板（小型领域 / 快速启动）。
 - `.github/skills/skills-skills/assets/template-complete.md`: 完整模板（生产级 / 复杂领域）。
-- `.github/skills/skills-skills/scripts/create-skill.py`: 脚手架生成器主实现（支持 minimal/full、输出目录、覆盖策略）。
+- `.github/skills/skills-skills/scripts/audit-skills.py`: 批量验证器主实现（自动发现所有技能目录，汇总验证结果）。
+- `.github/skills/skills-skills/scripts/audit-skills.sh`: 薄封装入口（转发到 `audit-skills.py`）。
+- `.github/skills/skills-skills/scripts/create-skill.py`: 脚手架生成器主实现（支持 minimal/full、输出目录、覆盖策略、AGENTS.md 生成）。
 - `.github/skills/skills-skills/scripts/create-skill.sh`: 薄封装入口（转发到 `create-skill.py`）。
 - `.github/skills/skills-skills/scripts/Skill_Seekers-development/`: 内置（vendored）Skill Seekers 源码快照（代码 + 配置；不包含上游 Markdown 文档）。
 - `.github/skills/skills-skills/scripts/skill-seekers-bootstrap.py`: 为内置 Skill Seekers 工具创建本地 venv 并安装依赖。
 - `.github/skills/skills-skills/scripts/skill-seekers.py`: 从内置源码运行 Skill Seekers（docs/github/pdf -> output/<name>/）。
 - `.github/skills/skills-skills/scripts/skill-seekers-import.py`: 将 output/<name>/ 导入标准目录 `.github/skills/<name>/`。
 - `.github/skills/skills-skills/scripts/skill-seekers-update.py`: 从上游更新内置源码快照（需要网络）。
-- `.github/skills/skills-skills/scripts/validate-skill.py`: 规范校验器（支持 `--strict`）。
+- `.github/skills/skills-skills/scripts/validate-skill.py`: 规范校验器（支持 `--strict`、`--format json`）。
 - 对应 `.sh` 文件均为薄封装入口，默认只转发参数到 `.py` 主实现。
 - `.github/skills/skills-skills/references/index.md`: 本元技能参考文档导航。
 - `.github/skills/skills-skills/references/README.md`: 上游官方参考（为保证本仓库链接可用做了轻量调整）。

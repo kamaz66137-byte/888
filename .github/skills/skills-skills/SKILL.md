@@ -204,6 +204,12 @@ python ./.github/skills/skills-skills/scripts/validate-skill.py .github/skills/<
 # 从仓库根目录（严格验证）
 python ./.github/skills/skills-skills/scripts/validate-skill.py .github/skills/<skill-name> --strict
 
+# JSON 输出（适合 CI 集成）
+python ./.github/skills/skills-skills/scripts/validate-skill.py .github/skills/<skill-name> --strict --format json
+
+# 批量验证全部技能
+python ./.github/skills/skills-skills/scripts/audit-skills.py --strict
+
 # 从 .github/skills/skills-skills/ 目录（基础验证）
 python ./scripts/validate-skill.py ../<skill-name>
 
@@ -224,6 +230,19 @@ python ./scripts/create-skill.py my-skill --full --output ..
 
 # 最简骨架
 python ./.github/skills/skills-skills/scripts/create-skill.py my-skill --minimal --output .github/skills
+```
+
+批量验证所有技能：
+
+```bash
+# 从仓库根目录（基础批量验证）
+python ./.github/skills/skills-skills/scripts/audit-skills.py
+
+# 跳过元技能自身
+python ./.github/skills/skills-skills/scripts/audit-skills.py --skip skills-skills
+
+# 严格模式 + JSON 输出（适合 CI）
+python ./.github/skills/skills-skills/scripts/audit-skills.py --strict --format json
 ```
 
 模板文件：
@@ -281,5 +300,5 @@ python ./.github/skills/skills-skills/scripts/create-skill.py my-skill --minimal
 ## 维护说明
 
 - 来源：`.github/skills/skills-skills/references/` 中的本地规范文件 + `references/README.md` 中的上游官方文档
-- 最后更新：2025-12-14
+- 最后更新：2026-05-03
 - 已知限制：`validate-skill.py` 为启发式验证；严格模式假定使用推荐的章节标题
